@@ -60,12 +60,13 @@ public class ShelterControllerTest {
     private List<Shelter> expectedShelterList;
     private Shelter expectedShelter;
     private String urlPath = "/shelter";
+    private Gson gson = new Gson();
 
     @BeforeEach
     private void getInitialTestShelters() {
         expectedShelterList = List.of(
-                new Shelter(1, "Shelter 1", "address", "location"),
-                new Shelter(2, "Shelter 2", "address", "location")
+                new Shelter(1, "Shelter 1", "address", "location",null),
+                new Shelter(2, "Shelter 2", "address", "location",null)
         );
         expectedShelter = expectedShelterList.get(0);
     }
@@ -81,7 +82,6 @@ public class ShelterControllerTest {
         Type listOfMyClassObjects = new TypeToken<List<Shelter>>() {
         }.getType();
 
-        Gson gson = new Gson();
         List<Shelter> actual = gson.fromJson(response.getContentAsString(), listOfMyClassObjects);
         assertThat(actual)
                 .containsExactlyInAnyOrderElementsOf(expectedShelterList)
@@ -98,7 +98,6 @@ public class ShelterControllerTest {
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
                 .andReturn().getResponse();
 
-        Gson gson = new Gson();
         Shelter actual = gson.fromJson(response.getContentAsString(), Shelter.class);
         assertThat(actual).isEqualTo(expectedShelter);
     }
@@ -109,7 +108,6 @@ public class ShelterControllerTest {
                 .andExpect(status().isNotFound())
                 .andReturn().getResponse();
 
-        Gson gson = new Gson();
         Shelter actual = gson.fromJson(response.getContentAsString(), Shelter.class);
         assertThat(actual).isNull();
     }
@@ -133,7 +131,6 @@ public class ShelterControllerTest {
                 .andExpect(jsonPath("$.id").value(expectedShelter.getId()))
                 .andReturn().getResponse();
 
-        Gson gson = new Gson();
         Shelter actual = gson.fromJson(response.getContentAsString(), Shelter.class);
         assertThat(actual).isEqualTo(expectedShelter);
     }
@@ -158,7 +155,6 @@ public class ShelterControllerTest {
                 .andExpect(jsonPath("$.id").value(expectedShelter.getId()))
                 .andReturn().getResponse();
 
-        Gson gson = new Gson();
         Shelter actual = gson.fromJson(response.getContentAsString(), Shelter.class);
         assertThat(actual).isEqualTo(expectedShelter);
     }
@@ -179,7 +175,6 @@ public class ShelterControllerTest {
                 .andExpect(status().isNotFound())
                 .andReturn().getResponse();
 
-        Gson gson = new Gson();
         Shelter actual = gson.fromJson(response.getContentAsString(), Shelter.class);
         assertThat(actual).isNull();
     }
@@ -195,7 +190,6 @@ public class ShelterControllerTest {
                 .andExpect(status().isOk())
                 .andReturn().getResponse();
 
-        Gson gson = new Gson();
         Shelter actual = gson.fromJson(response.getContentAsString(), Shelter.class);
         assertThat(actual).isEqualTo(expectedShelter);
     }
@@ -209,11 +203,9 @@ public class ShelterControllerTest {
                 .andExpect(status().isNotFound())
                 .andReturn().getResponse();
 
-        Gson gson = new Gson();
         Shelter actual = gson.fromJson(response.getContentAsString(), Shelter.class);
         assertThat(actual).isNull();
     }
-
 
 }
 

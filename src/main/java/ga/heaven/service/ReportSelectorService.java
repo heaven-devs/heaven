@@ -21,21 +21,18 @@ public class ReportSelectorService {
     private static final Logger LOGGER = LoggerFactory.getLogger(ReportSelectorService.class);
 
     private final MsgService msgService;
-
     private final ReportService reportService;
     private final CustomerService customerService;
-    private final CustomerContextService customerContextService;
     private final PetService petService;
 
     private Message inputMessage;
     private Customer customer;
     private String responseText;
 
-    public ReportSelectorService(MsgService msgService, ReportService reportService, CustomerService customerService, CustomerContextService customerContextService, PetService petService) {
+    public ReportSelectorService(MsgService msgService, ReportService reportService, CustomerService customerService, PetService petService) {
         this.msgService = msgService;
         this.reportService = reportService;
         this.customerService = customerService;
-        this.customerContextService = customerContextService;
         this.petService = petService;
     }
 
@@ -81,9 +78,9 @@ public class ReportSelectorService {
      * @param petId новое значение поля "petId"
      */
     private void updateCustomerContext(Context context, long petId) {
-        CustomerContext customerContext = customerContextService.findCustomerContextByCustomer(customer);
-        customerContext.setPetId(petId);
-        customerContextService.update(customerContext);
+        CustomerContext customerContext = customer.getCustomerContext();
+        customerContext.setCurrentPetId(petId);
+        customerService.updateCustomer(customer);
         updateCustomerContext(context);
     }
 
@@ -92,9 +89,9 @@ public class ReportSelectorService {
      * @param context новое значение поля "context"
      */
     private void updateCustomerContext(Context context) {
-        CustomerContext customerContext = customerContextService.findCustomerContextByCustomer(customer);
+        CustomerContext customerContext = customer.getCustomerContext();
         customerContext.setDialogContext(context);
-        customerContextService.update(customerContext);
+        customerService.updateCustomer(customer);
     }
 
     /**
@@ -115,7 +112,8 @@ public class ReportSelectorService {
      * @return текст ответа пользователю
      */
     private String processingUserMessages() {
-        Context context = customerContextService.findById(customer.getId()).getDialogContext();
+        responseText = "";
+        Context context = customer.getCustomerContext().getDialogContext();
         switch (context) {
             case WAIT_PET_ID: responseText = processingMsgWaitPetId(); break;
             case WAIT_REPORT: responseText = processingMsgWaitReport(); break;

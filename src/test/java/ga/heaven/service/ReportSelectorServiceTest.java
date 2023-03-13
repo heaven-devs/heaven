@@ -19,7 +19,6 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -33,6 +32,7 @@ import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 public class ReportSelectorServiceTest {
+    private static final Logger logger = LoggerFactory.getLogger(ReportSelectorServiceTest.class);
 
     @InjectMocks
     private ReportSelectorService reportSelectorService;
@@ -40,32 +40,23 @@ public class ReportSelectorServiceTest {
     @Mock
     private MsgService msgService;
     @Mock
-    private ReportService reportService;
-    @Mock
     private PetService petService;
     @Mock
     private CustomerService customerService;
-    @Mock
-    private CustomerContextService customerContextService;
 
-    private static final Logger logger = LoggerFactory.getLogger(ReportSelectorServiceTest.class);
-
-    private String updateResourceFile = "text_update.json";
-    private String updateResourceFileWithPhoto = "text_update_with_photo.json";
-    private String updateResourceFileWithPhotoAndCaption = "text_update_with_photo_and_caption.json";
+    private final String updateResourceFile = "text_update.json";
+    private final String updateResourceFileWithPhoto = "text_update_with_photo.json";
+    private final String updateResourceFileWithPhotoAndCaption = "text_update_with_photo_and_caption.json";
     private Customer expectedCustomer;
-    private CustomerContext expectedCustomerContext;
     private List<Pet> expectedNonePetsOfCustomer;
     private List<Pet> expectedOnePetOfCustomer;
     private List<Pet> expectedTwoPetsOfCustomer;
     private Update update;
 
-
     @BeforeEach
     private void initialTest() {
-        expectedCustomer = new Customer(1L, 777_777_777L, "surname", "name", "secondName", "phone", "address", null);
-        expectedCustomerContext = new CustomerContext(1L, FREE, 1L, expectedCustomer);
-        expectedCustomer.setCustomerContext(expectedCustomerContext);
+        expectedCustomer = new Customer(1L, 777_777_777L, "surname", "name", "secondName", "phone", "address",
+                new CustomerContext(1L, FREE, 1L, 1L));
         expectedNonePetsOfCustomer = new ArrayList<>();
         expectedOnePetOfCustomer = new ArrayList<>(expectedNonePetsOfCustomer);
         expectedOnePetOfCustomer.add(new Pet(1L, expectedCustomer));
@@ -73,15 +64,14 @@ public class ReportSelectorServiceTest {
         expectedTwoPetsOfCustomer = new ArrayList<>(expectedOnePetOfCustomer);
         expectedTwoPetsOfCustomer.add(new Pet(4L, expectedCustomer));
         expectedTwoPetsOfCustomer.get(1).setName("Pet2");
-
     }
 
     @Test
     public void switchCmdTestForSubmitReportCustomerWithoutPets() {
         update = getUpdateFromResourceFile(updateResourceFile, REPORT_SUBMIT_CMD);
+
         when(customerService.findCustomerByChatId(update.message().chat().id())).thenReturn(expectedCustomer);
         when(petService.findPetsByCustomerOrderById(expectedCustomer)).thenReturn(expectedNonePetsOfCustomer);
-
         reportSelectorService.switchCmd(update.message());
 
         ArgumentCaptor<Long> argumentCaptor1 = ArgumentCaptor.forClass(Long.class);
@@ -97,10 +87,9 @@ public class ReportSelectorServiceTest {
     @Test
     public void switchCmdTestForSubmitReportCustomerWithOnePet() {
         update = getUpdateFromResourceFile(updateResourceFile, REPORT_SUBMIT_CMD);
+
         when(customerService.findCustomerByChatId(update.message().chat().id())).thenReturn(expectedCustomer);
         when(petService.findPetsByCustomerOrderById(expectedCustomer)).thenReturn(expectedOnePetOfCustomer);
-        when(customerContextService.findCustomerContextByCustomer(expectedCustomer)).thenReturn(expectedCustomerContext);
-
         reportSelectorService.switchCmd(update.message());
 
         ArgumentCaptor<Long> argumentCaptor1 = ArgumentCaptor.forClass(Long.class);
@@ -116,14 +105,12 @@ public class ReportSelectorServiceTest {
     @Test
     public void switchCmdTestForSubmitReportCustomerWithTwoPets() {
         update = getUpdateFromResourceFile(updateResourceFile, REPORT_SUBMIT_CMD);
-        when(customerService.findCustomerByChatId(update.message().chat().id())).thenReturn(expectedCustomer);
 
+        when(customerService.findCustomerByChatId(update.message().chat().id())).thenReturn(expectedCustomer);
         String expectedAnswerTwoPets = "Введите id питомца:" + "1. Pet1" + "4. Pet2";
         expectedAnswerTwoPets = expectedAnswerTwoPets.replace(" ", "");
 
         when(petService.findPetsByCustomerOrderById(expectedCustomer)).thenReturn(expectedTwoPetsOfCustomer);
-        when(customerContextService.findCustomerContextByCustomer(expectedCustomer)).thenReturn(expectedCustomerContext);
-
         reportSelectorService.switchCmd(update.message());
 
         ArgumentCaptor<Long> argumentCaptor1 = ArgumentCaptor.forClass(Long.class);
@@ -139,12 +126,10 @@ public class ReportSelectorServiceTest {
     @Test
     public void SwitchCmdTestForContextWaitPetIdInvalidPetNumber() {
         update = getUpdateFromResourceFile(updateResourceFile, "Text report from customer");
-        expectedCustomerContext.setDialogContext(WAIT_PET_ID);
+        expectedCustomer.getCustomerContext().setDialogContext(WAIT_PET_ID);
 
         when(customerService.findCustomerByChatId(update.message().chat().id())).thenReturn(expectedCustomer);
-        when(customerContextService.findById(expectedCustomer.getId())).thenReturn(expectedCustomerContext);
         when(petService.findPetsByCustomerOrderById(expectedCustomer)).thenReturn(expectedTwoPetsOfCustomer);
-
         reportSelectorService.switchCmd(update.message());
 
         ArgumentCaptor<Long> argumentCatpor1 = ArgumentCaptor.forClass(Long.class);
@@ -161,13 +146,10 @@ public class ReportSelectorServiceTest {
     public void SwitchCmdTestForContextWaitPetIdValidPetNumber() {
         String expectedPetId = expectedTwoPetsOfCustomer.get(0).getId().toString();
         update = getUpdateFromResourceFile(updateResourceFile, expectedPetId);
-        expectedCustomerContext.setDialogContext(WAIT_PET_ID);
+        expectedCustomer.getCustomerContext().setDialogContext(WAIT_PET_ID);
 
         when(customerService.findCustomerByChatId(update.message().chat().id())).thenReturn(expectedCustomer);
-        when(customerContextService.findById(expectedCustomer.getId())).thenReturn(expectedCustomerContext);
-        when(customerContextService.findCustomerContextByCustomer(expectedCustomer)).thenReturn(expectedCustomerContext);
         when(petService.findPetsByCustomerOrderById(expectedCustomer)).thenReturn(expectedTwoPetsOfCustomer);
-
         reportSelectorService.switchCmd(update.message());
 
         ArgumentCaptor<Long> argumentCatpor1 = ArgumentCaptor.forClass(Long.class);
@@ -183,12 +165,9 @@ public class ReportSelectorServiceTest {
     @Test
     public void SwitchCmdTestForContextWaitReportGetTextReport() {
         update = getUpdateFromResourceFile(updateResourceFile, "Текст отчета, без картинки");
-        expectedCustomerContext.setDialogContext(WAIT_REPORT);
+        expectedCustomer.getCustomerContext().setDialogContext(WAIT_REPORT);
 
         when(customerService.findCustomerByChatId(update.message().chat().id())).thenReturn(expectedCustomer);
-        when(customerContextService.findById(expectedCustomer.getId())).thenReturn(expectedCustomerContext);
-        when(customerContextService.findCustomerContextByCustomer(expectedCustomer)).thenReturn(expectedCustomerContext);
-
         reportSelectorService.switchCmd(update.message());
 
         ArgumentCaptor<Long> argumentCatpor1 = ArgumentCaptor.forClass(Long.class);
@@ -205,12 +184,9 @@ public class ReportSelectorServiceTest {
     public void SwitchCmdTestForContextWaitReportGetPhotoReport() {
         String expectedPhoto = "Фото отчет, без текста";
         update = getUpdateFromResourceFile(updateResourceFileWithPhoto, expectedPhoto);
-        expectedCustomerContext.setDialogContext(WAIT_REPORT);
+        expectedCustomer.getCustomerContext().setDialogContext(WAIT_REPORT);
 
         when(customerService.findCustomerByChatId(update.message().chat().id())).thenReturn(expectedCustomer);
-        when(customerContextService.findById(expectedCustomer.getId())).thenReturn(expectedCustomerContext);
-        when(customerContextService.findCustomerContextByCustomer(expectedCustomer)).thenReturn(expectedCustomerContext);
-
         reportSelectorService.switchCmd(update.message());
 
         ArgumentCaptor<Long> argumentCatpor1 = ArgumentCaptor.forClass(Long.class);
@@ -227,12 +203,9 @@ public class ReportSelectorServiceTest {
     public void SwitchCmdTestForContextWaitReportGetFullReport() {
         String expectedCaption = "Полный отчет: фото и текст";
         update = getUpdateFromResourceFile(updateResourceFileWithPhotoAndCaption, expectedCaption);
-        expectedCustomerContext.setDialogContext(WAIT_REPORT);
+        expectedCustomer.getCustomerContext().setDialogContext(WAIT_REPORT);
 
         when(customerService.findCustomerByChatId(update.message().chat().id())).thenReturn(expectedCustomer);
-        when(customerContextService.findById(expectedCustomer.getId())).thenReturn(expectedCustomerContext);
-        when(customerContextService.findCustomerContextByCustomer(expectedCustomer)).thenReturn(expectedCustomerContext);
-
         reportSelectorService.switchCmd(update.message());
 
         ArgumentCaptor<Long> argumentCatpor1 = ArgumentCaptor.forClass(Long.class);
@@ -256,9 +229,7 @@ public class ReportSelectorServiceTest {
         try {
             json = Files.readString(
                     Paths.get(TelegramBotUpdatesListenerTest.class.getResource(resourceFile).toURI()));
-        } catch (IOException e) {
-            logger.error(e.getMessage());
-        } catch (URISyntaxException e) {
+        } catch (IOException | URISyntaxException e) {
             logger.error(e.getMessage());
         }
         return json;

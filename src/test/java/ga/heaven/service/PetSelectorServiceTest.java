@@ -17,6 +17,7 @@ import java.io.IOException;
 import java.net.URISyntaxException;
 
 import static ga.heaven.configuration.Constants.DATING_RULES_CMD;
+import static ga.heaven.service.PeripheralService.*;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -36,11 +37,11 @@ class PetSelectorServiceTest {
     static final Long FROM_ID = 198787L;
     static final Long CHAT_ID = 984759475L;
     
-    private Update createUpdate() throws JSONException, URISyntaxException, IOException {
+    /*private Update createUpdate() throws JSONException, URISyntaxException, IOException {
         return createUpdate(null, null, null);
-    }
+    }*/
     
-    private Update createUpdate(Long fromId, Long chatId, String msgText) throws URISyntaxException, IOException, JSONException {
+    /*private Update createUpdate(Long fromId, Long chatId, String msgText) throws URISyntaxException, IOException, JSONException {
         ObjectMapper mapper = new ObjectMapper();
         ObjectNode rootNode = (ObjectNode) mapper.createObjectNode();
         ObjectNode messageNode = rootNode.putObject("message");
@@ -54,11 +55,11 @@ class PetSelectorServiceTest {
             messageNode.put("text", msgText);
         }
         return BotUtils.fromJson(rootNode.toPrettyString(), Update.class);
-    }
+    }*/
     
     @Test
     public void switchCmdTest() throws URISyntaxException, IOException, JSONException {
-        Update update = createUpdate(FROM_ID, CHAT_ID, DATING_RULES_CMD);
+        Update update = createUpdate(CHAT_ID, DATING_RULES_CMD);
         petSelectorService.switchCmd(update.message());
         ArgumentCaptor<Long> argumentCaptor = ArgumentCaptor.forClass(Long.class);
         Mockito.verify(appLogicService).sendDatingRules(argumentCaptor.capture());

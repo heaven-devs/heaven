@@ -4,10 +4,10 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-class PeripheralServiceImplTest {
+class PeripheralServiceTest {
     public static final String GREETING_HAS_STRING =
             "frontend will be here soon";
-    private final PeripheralServiceImpl out = new PeripheralServiceImpl();
+    private final PeripheralService out = new PeripheralService();
     
     @Test
     void indexTest() {

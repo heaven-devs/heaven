@@ -57,10 +57,10 @@ public class BreedControllerTest {
     @MockBean
     private PeripheralService peripheralService;
 
-
     private List<Breed> expectedBreedList;
     private Breed expectedBreed;
     private String urlPath = "/breed";
+    private Gson gson = new Gson();
 
     @BeforeEach
     private void getInitialTestBreeds() {
@@ -83,7 +83,6 @@ public class BreedControllerTest {
         Type listOfMyClassObjects = new TypeToken<List<Breed>>() {
         }.getType();
 
-        Gson gson = new Gson();
         List<Breed> actual = gson.fromJson(response.getContentAsString(), listOfMyClassObjects);
 
         assertThat(actual)
@@ -101,7 +100,6 @@ public class BreedControllerTest {
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
                 .andReturn().getResponse();
 
-        Gson gson = new Gson();
         Breed actual = gson.fromJson(response.getContentAsString(), Breed.class);
         assertThat(actual).isEqualTo(expectedBreed);
     }
@@ -112,7 +110,6 @@ public class BreedControllerTest {
                 .andExpect(status().isNotFound())
                 .andReturn().getResponse();
 
-        Gson gson = new Gson();
         Breed actual = gson.fromJson(response.getContentAsString(), Breed.class);
         assertThat(actual).isNull();
     }
@@ -137,7 +134,6 @@ public class BreedControllerTest {
                 .andExpect(jsonPath("$.id").value(expectedBreed.getId()))
                 .andReturn().getResponse();
 
-        Gson gson = new Gson();
         Breed actual = gson.fromJson(response.getContentAsString(), Breed.class);
         assertThat(actual).isEqualTo(expectedBreed);
     }
@@ -163,7 +159,6 @@ public class BreedControllerTest {
                 .andExpect(jsonPath("$.id").value(expectedBreed.getId()))
                 .andReturn().getResponse();
 
-        Gson gson = new Gson();
         Breed actual = gson.fromJson(response.getContentAsString(), Breed.class);
         assertThat(actual).isEqualTo(expectedBreed);
     }
@@ -185,7 +180,6 @@ public class BreedControllerTest {
                 .andExpect(status().isNotFound())
                 .andReturn().getResponse();
 
-        Gson gson = new Gson();
         Breed actual = gson.fromJson(response.getContentAsString(), Breed.class);
         assertThat(actual).isNull();
     }
@@ -201,7 +195,6 @@ public class BreedControllerTest {
                 .andExpect(status().isOk())
                 .andReturn().getResponse();
 
-        Gson gson = new Gson();
         Breed actual = gson.fromJson(response.getContentAsString(), Breed.class);
         assertThat(actual).isEqualTo(expectedBreed);
     }
@@ -215,7 +208,6 @@ public class BreedControllerTest {
                 .andExpect(status().isNotFound())
                 .andReturn().getResponse();
 
-        Gson gson = new Gson();
         Breed actual = gson.fromJson(response.getContentAsString(), Breed.class);
         assertThat(actual).isNull();
     }

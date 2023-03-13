@@ -60,6 +60,7 @@ class InfoControllerTest {
     @MockBean
     private CustomerService customerService;
 
+    private Gson gson = new Gson();
 
     private List<Info> getInitialTestInfoList() {
         Info info1 = getTestInfo(1L, "area1", "+instructions1");
@@ -91,7 +92,6 @@ class InfoControllerTest {
                 .andReturn().getResponse();
 
         Type listOfMyClassObject = new TypeToken<ArrayList<Info>>() {}.getType();
-        Gson gson = new Gson();
         List<Info> actual = gson.fromJson(response.getContentAsString(), listOfMyClassObject);
         assertThat(actual).containsExactlyInAnyOrderElementsOf(infoList);
     }
@@ -112,7 +112,6 @@ class InfoControllerTest {
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
                 .andReturn().getResponse();
 
-        Gson gson = new Gson();
         Info actual = gson.fromJson(response.getContentAsString(), Info.class);
         assertThat(actual).isEqualTo(info);
     }
@@ -192,7 +191,6 @@ class InfoControllerTest {
                 .andExpect(status().isOk())
                 .andReturn().getResponse();
 
-        Gson gson = new Gson();
         Info actual = gson.fromJson(response.getContentAsString(), Info.class);
         assertThat(actual).isEqualTo(info);
     }

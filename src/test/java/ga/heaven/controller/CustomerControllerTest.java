@@ -1,18 +1,16 @@
 package ga.heaven.controller;
 
 import com.google.gson.Gson;
-import com.google.gson.JsonObject;
 import com.google.gson.reflect.TypeToken;
 import ga.heaven.model.Customer;
+import ga.heaven.model.CustomerContext;
 import ga.heaven.repository.CustomerRepository;
 import ga.heaven.service.*;
-import io.swagger.v3.core.util.Json;
 import org.json.JSONObject;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.json.JsonContent;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.boot.test.mock.mockito.SpyBean;
 import org.springframework.http.MediaType;
@@ -25,15 +23,12 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+import static ga.heaven.model.CustomerContext.Context.FREE;
 import static org.assertj.core.api.Assertions.*;
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-//@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-//@ExtendWith(MockitoExtension.class)
 @WebMvcTest
 class CustomerControllerTest {
 
@@ -65,6 +60,8 @@ class CustomerControllerTest {
     @MockBean
     private VolunteerService volunteerService;
 
+    private Gson gson = new Gson();
+
     private List<Customer> getInitialTestCustomers() {
         Customer customer1 = getTestCustomer(1L, "customerName1", "+71111111111");
         Customer customer2 = getTestCustomer(2L, "customerName2", "+72222222222");
@@ -93,15 +90,9 @@ class CustomerControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
                 .andReturn().getResponse();
-        //System.out.println("response = " + response.getContentAsString());
-        // Полезная информация https://www.baeldung.com/gson-list
-
         Type listOfMyClassObject = new TypeToken<ArrayList<Customer>>() {}.getType();
 
-        Gson gson = new Gson();
         List<Customer> actual = gson.fromJson(response.getContentAsString(), listOfMyClassObject);
-        /*System.out.println("actual = " + actual);
-        System.out.println("customers = " + customers);*/
         assertThat(actual).containsExactlyInAnyOrderElementsOf(customers);
         assertThat(actual).isEqualTo(customers);
     }
@@ -120,48 +111,88 @@ class CustomerControllerTest {
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
                 .andReturn().getResponse();
 
-        Gson gson = new Gson();
         Customer actual = gson.fromJson(response.getContentAsString(), Customer.class);
         assertThat(actual).isEqualTo(customer);
-
-        /*System.out.println("actual = " + actual);
-        System.out.println("response = " + response.getContentAsString());*/
     }
 
     @Test
-    void createCustomer() throws Exception{
-        Customer customer = getTestCustomer(25L, "Иван", "+71111111111");
-        when(customerRepository.save(customer)).thenReturn(customer);
+    void createCustomerPositive() throws Exception {
+        Customer expectedCustomer = getTestCustomer(25L, "Иван", "+71111111111");
+        when(customerRepository.save(expectedCustomer)).thenReturn(expectedCustomer);
 
         JSONObject jo = new JSONObject();
         jo.put("id", 25L);
         jo.put("name", "Иван");
         jo.put("phone", "+71111111111");
 
-        mockMvc.perform(MockMvcRequestBuilders
-                .post("/customer")
-                .content(jo.toString())
-                .contentType(MediaType.APPLICATION_JSON)
-                .accept(MediaType.APPLICATION_JSON))
+        MockHttpServletResponse response = mockMvc.perform(MockMvcRequestBuilders
+                        .post("/customer")
+                        .content(jo.toString())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.id").value(25L));
+                .andExpect(jsonPath("$.id").value(expectedCustomer.getId()))
+                .andReturn().getResponse();
+        Customer actual = gson.fromJson(response.getContentAsString(), expectedCustomer.getClass());
+        assertThat(actual).isEqualTo(expectedCustomer);
     }
 
     @Test
-    void updateCustomer() throws Exception{
-        when(customerRepository.findById(25L)).thenReturn(Optional.empty());
+    void updateCustomerPositive() throws Exception {
+        CustomerContext expectedCustomerContext = new CustomerContext(1L, FREE, null, null);
+        Customer expectedCustomer = new Customer(1L, 333_333_333L, "Petrov", "Ivan", "Frolovich", "+71111111111", "address", expectedCustomerContext);
+
+        when(customerRepository.findCustomerById(expectedCustomer.getId())).thenReturn(Optional.of(expectedCustomer));
+        when(customerRepository.findById(expectedCustomer.getId())).thenReturn(Optional.of(expectedCustomer));
+        when(customerRepository.save(expectedCustomer)).thenReturn(expectedCustomer);
+
+        JSONObject joc = new JSONObject();
+        joc.put("id", expectedCustomer.getCustomerContext().getId());
+        joc.put("dialogContext", expectedCustomer.getCustomerContext().getDialogContext());
+        joc.put("currentPetId", expectedCustomer.getCustomerContext().getCurrentPetId());
+
+        JSONObject jo = new JSONObject();
+        jo.put("id", expectedCustomer.getId());
+        jo.put("chatId", expectedCustomer.getChatId());
+        jo.put("surname", expectedCustomer.getSurname());
+        jo.put("name", expectedCustomer.getName());
+        jo.put("secondName", expectedCustomer.getSecondName());
+        jo.put("phone", expectedCustomer.getPhone());
+        jo.put("address", expectedCustomer.getAddress());
+        jo.put("customerContext", joc);
+
+        MockHttpServletResponse response = mockMvc.perform(MockMvcRequestBuilders
+                        .put("/customer")
+                        .content(jo.toString())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(expectedCustomer.getId()))
+                .andReturn().getResponse();
+        Customer actual = gson.fromJson(response.getContentAsString(), expectedCustomer.getClass());
+        assertThat(actual).isEqualTo(expectedCustomer);
+    }
+
+    @Test
+    void updateCustomerNegative() throws Exception {
+        Customer expectedCustomer = new Customer();
+        expectedCustomer.setId(25L);
+        when(customerRepository.findById(expectedCustomer.getId())).thenReturn(Optional.empty());
 
         JSONObject newCustomerJson = new JSONObject();
-        newCustomerJson.put("id", 25L);
-        newCustomerJson.put("name", "Иван");
+        newCustomerJson.put("id", expectedCustomer.getId());
+        newCustomerJson.put("name", "Ivan");
         newCustomerJson.put("phone", "+71111111111");
 
-        mockMvc.perform(MockMvcRequestBuilders
+        MockHttpServletResponse response = mockMvc.perform(MockMvcRequestBuilders
                         .put("/customer")
                         .content(newCustomerJson.toString())
                         .contentType(MediaType.APPLICATION_JSON)
                         .accept(MediaType.APPLICATION_JSON))
-                .andExpect(status().isNotFound());
+                .andExpect(status().isNotFound())
+                .andReturn().getResponse();
+        Customer actual = gson.fromJson(response.getContentAsString(), expectedCustomer.getClass());
+        assertThat(actual).isNull();
     }
 
     @Test
@@ -183,12 +214,7 @@ class CustomerControllerTest {
                         .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andReturn().getResponse();
-
-        Gson gson = new Gson();
         Customer actual = gson.fromJson(response.getContentAsString(), Customer.class);
         assertThat(actual).isEqualTo(customer);
-
-        //System.out.println("actual = " + actual);
-        //System.out.println("customer = " + customer);
     }
 }

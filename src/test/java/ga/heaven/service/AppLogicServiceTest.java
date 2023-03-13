@@ -2,6 +2,8 @@ package ga.heaven.service;
 
 import com.pengrad.telegrambot.BotUtils;
 import com.pengrad.telegrambot.model.Update;
+import com.pengrad.telegrambot.model.request.InlineKeyboardButton;
+import com.pengrad.telegrambot.model.request.InlineKeyboardMarkup;
 import com.pengrad.telegrambot.model.request.Keyboard;
 import ga.heaven.listener.TelegramBotUpdatesListenerTest;
 import ga.heaven.model.Customer;
@@ -25,6 +27,7 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 
 import static ga.heaven.configuration.Constants.*;
+import static ga.heaven.model.CustomerContext.Context.FREE;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -38,14 +41,13 @@ public class AppLogicServiceTest {
     @Mock
     private CustomerService customerService;
     @Mock
-    private CustomerContextService customerContextService;
+    private ShelterService shelterService;
     @Mock
     private MsgService msgService;
 
     private Info expectedInfo;
     private Long expectedChatId;
     private Customer expectedCustomer;
-    private CustomerContext expectedCustomerContext;
 
     private static final Logger logger = LoggerFactory.getLogger(AppLogicServiceTest.class);
 
@@ -57,8 +59,7 @@ public class AppLogicServiceTest {
         expectedCustomer.setId(1L);
         expectedCustomer.setChatId(expectedChatId);
         expectedCustomer.setName("Ivan");
-        expectedCustomerContext = new CustomerContext(1L, CustomerContext.Context.FREE, 2L, expectedCustomer);
-        expectedCustomer.setCustomerContext(expectedCustomerContext);
+        expectedCustomer.setCustomerContext(new CustomerContext(1L, FREE, 2L, 1L));
     }
 
     @Test
@@ -103,7 +104,6 @@ public class AppLogicServiceTest {
         when(customerService.isPresent(expectedChatId)).thenReturn(false);
         when(infoService.findInfoByArea(expectedCommand)).thenReturn(expectedInfo);
         when(customerService.createCustomer(expectedChatId)).thenReturn(expectedCustomer);
-        when(customerContextService.create(expectedCustomer)).thenReturn(expectedCustomerContext);
 
         Update update = getUpdateFromResourceFile("text_update.json", expectedCommand);
         appLogicService.initConversation(update.message().chat().id());
@@ -119,12 +119,11 @@ public class AppLogicServiceTest {
 
     @Test
     public void handleInitConversationForExistingUser() {
-        String expectedCommand = COMMON_INFO_FIELD;
-        String expectedBotResponse = SHELTER_CHOOSE_MSG;
+        InlineKeyboardMarkup expectedKbMarkup = new InlineKeyboardMarkup();
 
         when(customerService.isPresent(expectedChatId)).thenReturn(true);
 
-        Update update = getUpdateFromResourceFile("text_update.json", expectedCommand);
+        Update update = getUpdateFromResourceFile("text_update.json", COMMON_INFO_FIELD);
         appLogicService.initConversation(update.message().chat().id());
 
         ArgumentCaptor<Long> argumentCaptor1 = ArgumentCaptor.forClass(Long.class);
@@ -138,8 +137,8 @@ public class AppLogicServiceTest {
         Keyboard actualArgument3 = argumentCaptor3.getValue();
 
         Assertions.assertThat(actualArgument1).isEqualTo(expectedChatId);
-        Assertions.assertThat(actualArgument2).isEqualTo(expectedBotResponse);
-        Assertions.assertThat(actualArgument3).isNull();
+        Assertions.assertThat(actualArgument2).isEqualTo(SHELTER_CHOOSE_MSG);
+        Assertions.assertThat(actualArgument3).isEqualTo(expectedKbMarkup);
     }
 
     private Update getUpdateFromResourceFile(String jsonFile, String command) {
@@ -147,9 +146,7 @@ public class AppLogicServiceTest {
         try {
             json = Files.readString(
                     Paths.get(TelegramBotUpdatesListenerTest.class.getResource(jsonFile).toURI()));
-        } catch (IOException e) {
-            logger.error(e.getMessage());
-        } catch (URISyntaxException e) {
+        } catch (IOException | URISyntaxException e) {
             logger.error(e.getMessage());
         }
         return BotUtils.fromJson(json.replace("%command%", command), Update.class);

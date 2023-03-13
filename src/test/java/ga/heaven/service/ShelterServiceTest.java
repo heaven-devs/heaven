@@ -30,8 +30,8 @@ public class ShelterServiceTest {
     @BeforeEach
     private void getInitialTestShelters() {
         expectedShelterList = List.of(
-                new Shelter(1, "Shelter 1", "address", "location"),
-                new Shelter(2, "Shelter 2", "address", "location")
+                new Shelter(1, "Shelter 1", "address", "location",null),
+                new Shelter(2, "Shelter 2", "address", "location", null)
         );
         expectedShelter = expectedShelterList.get(0);
     }

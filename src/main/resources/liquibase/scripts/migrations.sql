@@ -237,3 +237,164 @@ create table if not exists volunteer_shelter
 -- changeset alrepin:6
 alter table volunteer
     alter column chat_id drop not null;
+
+-- changeset Alex Turaev:2
+
+INSERT INTO public.info
+(area, instructions)
+SELECT 'documents', 'Required documents: doc1, doc2, doc3'
+WHERE NOT EXISTS(
+        SELECT area FROM public.info WHERE area = 'documents'
+    );
+
+-- changeset Alex Turaev:3
+
+INSERT INTO public.info
+(area, instructions)
+SELECT 'transport', 'Transportation rules: transport animals carefully'
+WHERE NOT EXISTS(
+        SELECT area FROM public.info WHERE area = 'transport'
+    );
+
+-- changeset Alex Turaev:4
+
+INSERT INTO public.info
+(area, instructions)
+SELECT 'comfort_pet', 'The house for pet should be clean'
+WHERE NOT EXISTS(
+        SELECT area FROM public.info WHERE area = 'comfort_pet'
+    );
+
+-- changeset Alex Turaev:5
+
+INSERT INTO public.info
+(area, instructions)
+SELECT 'comfort_dog', 'The house for dog should be clean'
+WHERE NOT EXISTS(
+        SELECT area FROM public.info WHERE area = 'comfort_dog'
+    );
+
+-- changeset Alex Turaev:6
+
+INSERT INTO public.info
+(area, instructions)
+SELECT 'comfort_handicapped', 'The house for handicapped pet should be clean'
+WHERE NOT EXISTS(
+        SELECT area FROM public.info WHERE area = 'comfort_handicapped'
+    );
+
+-- changeset Alex Turaev:7
+
+INSERT INTO public.info
+(area, instructions)
+SELECT 'cynologist_advice', 'Tips from a dog handler: take care of the dog, feed it properly'
+WHERE NOT EXISTS(
+        SELECT area FROM public.info WHERE area = 'cynologist_advice'
+    );
+
+-- changeset Alex Turaev:8
+
+INSERT INTO public.info
+(area, instructions)
+SELECT 'cynologists_list', 'List of dog handlers: Ivan, Petr'
+WHERE NOT EXISTS(
+        SELECT area FROM public.info WHERE area = 'cynologists_list'
+    );
+
+-- changeset Alex Turaev:9
+
+INSERT INTO public.info
+(area, instructions)
+SELECT 'reasons_refusal', 'The list of reasons for refusal: reason1, reason2'
+WHERE NOT EXISTS(
+        SELECT area FROM public.info WHERE area = 'reasons_refusal'
+    );
+
+-- changeset alrepin:7
+INSERT INTO public.shelter
+(id, name)
+SELECT 1, 'Cat''s shelter'
+WHERE NOT EXISTS(
+        SELECT id, name FROM public.shelter WHERE name = 'Cat''s shelter'
+    );
+
+INSERT INTO public.shelter
+(id, name)
+SELECT 2, 'Dog''s shelter'
+WHERE NOT EXISTS(
+        SELECT id, name FROM public.shelter WHERE name = 'Dog''s shelter'
+    );
+
+INSERT INTO public.volunteer
+(id, chat_id, name)
+SELECT 1, 440401693,'Тарасов Сергей'
+WHERE NOT EXISTS(
+        SELECT chat_id, name FROM public.volunteer WHERE name = 'Тарасов Сергей'
+    );
+
+INSERT INTO public.volunteer
+(id, chat_id, name)
+SELECT 2, 54204985,'Репин Алексей'
+WHERE NOT EXISTS(
+        SELECT chat_id, name FROM public.volunteer WHERE name = 'Репин Алексей'
+    );
+
+INSERT INTO public.volunteer
+(id, chat_id, name)
+SELECT 3, 302455489,'Пупкин Василий'
+WHERE NOT EXISTS(
+        SELECT chat_id, name FROM public.volunteer WHERE name = 'Пупкин Василий'
+    );
+
+INSERT INTO public.volunteer_shelter
+(volunteer_id, shelter_id)
+SELECT 1, 1
+WHERE NOT EXISTS(
+        SELECT volunteer_id, shelter_id FROM public.volunteer_shelter WHERE volunteer_id = 1 AND shelter_id = 1
+    );
+
+INSERT INTO public.volunteer_shelter
+(volunteer_id, shelter_id)
+SELECT 2, 2
+WHERE NOT EXISTS(
+        SELECT volunteer_id, shelter_id FROM public.volunteer_shelter WHERE volunteer_id = 2 AND shelter_id = 2
+    );
+
+INSERT INTO public.volunteer_shelter
+(volunteer_id, shelter_id)
+SELECT 3, 1
+WHERE NOT EXISTS(
+        SELECT volunteer_id, shelter_id FROM public.volunteer_shelter WHERE volunteer_id = 3 AND shelter_id = 1
+    );
+
+INSERT INTO public.volunteer_shelter
+(volunteer_id, shelter_id)
+SELECT 3, 2
+WHERE NOT EXISTS(
+        SELECT volunteer_id, shelter_id FROM public.volunteer_shelter WHERE volunteer_id = 3 AND shelter_id = 2
+    );
+
+-- changeset alrepin:8
+UPDATE public.pet
+SET id_shelter = 2::bigint
+WHERE id = 4::bigint;
+
+UPDATE public.pet
+SET id_shelter = 1::bigint
+WHERE id = 2::bigint;
+
+UPDATE public.pet
+SET id_shelter = 1::bigint
+WHERE id = 1::bigint;
+
+UPDATE public.pet
+SET id_shelter = 2::bigint
+WHERE id = 3::bigint;
+
+-- changeset alrepin:9
+alter table customer_context
+    add shelter_id bigint default null;
+
+-- changeset telion:3
+ALTER TABLE public.customer_context DROP COLUMN customer_id;
+ALTER TABLE public.customer_context RENAME COLUMN pet_id TO current_pet_id;

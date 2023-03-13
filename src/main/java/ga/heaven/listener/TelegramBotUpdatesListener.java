@@ -2,6 +2,7 @@ package ga.heaven.listener;
 
 import com.pengrad.telegrambot.TelegramBot;
 import com.pengrad.telegrambot.UpdatesListener;
+import com.pengrad.telegrambot.model.CallbackQuery;
 import com.pengrad.telegrambot.model.Message;
 import com.pengrad.telegrambot.model.Update;
 import ga.heaven.service.CmdSelectorService;
@@ -38,6 +39,10 @@ public class TelegramBotUpdatesListener implements UpdatesListener {
             Message msg = update.message();
             if (msg != null) {
                 cmdSelectorService.processingMsg(msg);
+            }
+            CallbackQuery cbQuery = update.callbackQuery();
+            if (cbQuery != null) {
+                cmdSelectorService.processingCallBackQuery(cbQuery);
             }
         });
         return UpdatesListener.CONFIRMED_UPDATES_ALL;

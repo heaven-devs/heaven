@@ -26,7 +26,6 @@ public class CustomerController {
         this.customerService = customerService;
     }
 
-    //@GetMapping("/get-customers")
     @Operation(
             summary = "Gets all records",
             responses = {
@@ -42,7 +41,7 @@ public class CustomerController {
             tags = "\uD83D\uDE4B Customer store"
     )
     @GetMapping
-    public ResponseEntity <List<Customer>> getAllCustomers() {
+    public ResponseEntity<List<Customer>> getAllCustomers() {
         return ResponseEntity.ok(customerService.getCustomers());
     }
     
@@ -61,7 +60,7 @@ public class CustomerController {
             tags = "\uD83D\uDE4B Customer store"
     )
     @GetMapping("{id}")
-    public ResponseEntity <Customer> getCustomerById(@PathVariable Long id) {
+    public ResponseEntity<Customer> getCustomerById(@PathVariable Long id) {
         Customer customer = customerService.findCustomerById(id);
         if (customer == null) {
             return ResponseEntity.notFound().build();
@@ -85,7 +84,7 @@ public class CustomerController {
             tags = "\uD83D\uDE4B Customer store"
     )
     @PostMapping
-    public ResponseEntity <Customer> createCustomer(@RequestBody Customer customer) {
+    public ResponseEntity<Customer> createCustomer(@RequestBody Customer customer) {
         return ResponseEntity.ok(customerService.createCustomer(customer));
     }
     
@@ -104,7 +103,7 @@ public class CustomerController {
             tags = "\uD83D\uDE4B Customer store"
     )
     @PutMapping
-    public ResponseEntity <Customer> updateCustomer(@RequestBody Customer newCustomer) {
+    public ResponseEntity<Customer> updateCustomer(@RequestBody Customer newCustomer) {
         Customer customer = customerService.updateCustomer(newCustomer);
         if (customer == null) {
             return ResponseEntity.notFound().build();
@@ -128,7 +127,7 @@ public class CustomerController {
             tags = "\uD83D\uDE4B Customer store"
     )
     @DeleteMapping("{id}")
-    public ResponseEntity <Customer> removeCustomer(@PathVariable Long id) {
+    public ResponseEntity<Customer> removeCustomer(@PathVariable Long id) {
         Customer customer = customerService.deleteCustomerById(id);
         if (customer == null) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
