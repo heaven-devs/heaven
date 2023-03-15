@@ -65,4 +65,7 @@ public class Pet {
     public int hashCode() {
         return getClass().hashCode();
     }
+
+    public void setPet(Long petId) {
+    }
 }

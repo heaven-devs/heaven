@@ -1,20 +1,41 @@
 package ga.heaven.service;
 
 import com.pengrad.telegrambot.model.Message;
+import ga.heaven.exception.FileIsTooBigException;
+import ga.heaven.exception.PetNotFoundException;
 import ga.heaven.model.Customer;
 import ga.heaven.model.CustomerContext;
 import ga.heaven.model.CustomerContext.Context;
 import ga.heaven.model.Pet;
+import ga.heaven.repository.PetRepository;
+import org.apache.tomcat.util.http.fileupload.FileUploadException;
+import org.apache.tomcat.util.http.fileupload.impl.FileSizeLimitExceededException;
+import org.hibernate.annotations.NotFound;
+import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.data.crossstore.ChangeSetPersister;
+import org.springframework.http.*;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
+import org.springframework.web.multipart.MultipartFile;
+import org.webjars.NotFoundException;
 
+import javax.imageio.ImageIO;
+import java.awt.*;
+import java.awt.image.BufferedImage;
+import java.io.*;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.stream.Collectors;
 
 import static ga.heaven.configuration.Constants.*;
 import static ga.heaven.configuration.ReportConstants.*;
 import static ga.heaven.model.CustomerContext.Context.*;
+import static java.nio.file.StandardOpenOption.CREATE_NEW;
 
 @Service
 public class ReportSelectorService {
@@ -25,15 +46,20 @@ public class ReportSelectorService {
     private final CustomerService customerService;
     private final PetService petService;
 
+    private final int fileSizeLimit = 300;
+
     private Message inputMessage;
     private Customer customer;
     private String responseText;
+    private final PetRepository petRepository;
 
-    public ReportSelectorService(MsgService msgService, ReportService reportService, CustomerService customerService, PetService petService) {
+    public ReportSelectorService(MsgService msgService, ReportService reportService, CustomerService customerService, PetService petService,
+                                 PetRepository petRepository) {
         this.msgService = msgService;
         this.reportService = reportService;
         this.customerService = customerService;
         this.petService = petService;
+        this.petRepository = petRepository;
     }
 
     /**
@@ -169,8 +195,68 @@ public class ReportSelectorService {
     /**
      * Метод получает фото и записывает его в БД
      */
-    private void savePhotoToDB() {
+    private void savePhotoToDB(Long petId, MultipartFile file) throws IOException {
         // todo: получить фото от бота, разложить на байты, записать в базу. https://www.baeldung.com/java-download-file
+
+
+        if(file.getSize() > 1024 * fileSizeLimit){
+            throw new FileIsTooBigException(fileSizeLimit);
+        }
+        Pet pet = petService.read(petId);
+
+        if(pet == null){
+            throw new PetNotFoundException(petId);
+        }
+        Path filePath =Path.of(String.valueOf(pet),petId + ". " + getExtension(file.getOriginalFilename()));
+        Files.createDirectories(filePath.getParent());
+        Files.deleteIfExists(filePath);
+
+        try(InputStream is = file.getInputStream();
+            OutputStream os = Files.newOutputStream(filePath, CREATE_NEW);
+            BufferedInputStream bis = new BufferedInputStream(is, 1024);
+            BufferedOutputStream bos = new BufferedOutputStream(os, 1024);
+        ){
+            bis.transferTo(bos);
+        }
+
+        Pet photo = findPhoto(petId);
+        photo.setPet(petId);
+        photo.setFilePath(filePath.toString());
+        photo.setFileSize(file.getSize());
+        photo.setMediaType(file.getContentType());
+        photo.setPhoto(generateImagePreview(filePath));
+
+        petRepository.save(photo);
     }
+
+    private byte[] generateImagePreview(Path filePath) throws IOException {
+        try(InputStream is = Files.newInputStream(filePath);
+            BufferedInputStream bis = new BufferedInputStream(is, 1024);
+            ByteArrayOutputStream bos = new ByteArrayOutputStream()
+        ){
+            BufferedImage image = ImageIO.read(bis);
+
+            int height = image.getHeight() / (image.getWidth() / 100);
+            BufferedImage preview = new BufferedImage(100, height, image.getType());
+            Graphics2D graphics = preview.createGraphics();
+            graphics.drawImage(image, 0, 0, 100, height, null);
+            graphics.dispose();
+
+            ImageIO.write(preview, getExtension(filePath.getFileName().toString()), bos);
+            return bos.toByteArray();
+        }
+    }
+    public Pet findPhoto(Long petId) {
+
+        return petRepository.findById(petId).orElse(new Pet());
+    }
+    private String getExtension(String fileName) {
+
+        return fileName.substring(fileName.lastIndexOf(".") + 1);
+    }
+
+
+
+
 
 }
